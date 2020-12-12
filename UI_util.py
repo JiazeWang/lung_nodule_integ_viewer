@@ -111,11 +111,12 @@ def predict_nodule(net, data, coord, nzhw, lbb, n_per_run, split_comber, get_pbb
     outputlist = []
 
     for i in range(len(splitlist) - 1):
-        inputdata = Variable(data[splitlist[i]:splitlist[i + 1]], volatile=True).cuda()
-        inputcoord = Variable(coord[splitlist[i]:splitlist[i + 1]], volatile=True).cuda()
-        output = net(inputdata, inputcoord)
-        outputlist.append(output.data.cpu().numpy())
-        progressBar.setValue(10 + (80/len(splitlist) * (i+1)))
+        with torch.no_grad():
+            inputdata = Variable(data[splitlist[i]:splitlist[i + 1]]).cuda()
+            inputcoord = Variable(coord[splitlist[i]:splitlist[i + 1]]).cuda()
+            output = net(inputdata, inputcoord)
+            outputlist.append(output.data.cpu().numpy())
+            progressBar.setValue(10 + (80/len(splitlist) * (i+1)))
     output = np.concatenate(outputlist, 0)
     output = split_comber.combine(output, nzhw=nzhw)
 
@@ -311,7 +312,7 @@ def crop_nodule_arr_2ch(target, img_arr, crop_size = 48):
 
 def predict_attribute(attribute_net, crop_img):
     attribute_net.eval()
-    crop_img = Variable(crop_img.cuda(async=True), volatile=True)
-    output = attribute_net(crop_img)
+    with torch.no_grad():
+        crop_img = Variable(crop_img.cuda(async=True))
+        output = attribute_net(crop_img)
     return output
-

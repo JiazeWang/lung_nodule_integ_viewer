@@ -37,7 +37,7 @@ class Main_Window(QtWidgets.QMainWindow, Ui_xai_viewer):
         self.horizontalScrollBar.valueChanged.connect(self.scroll_slide)
         self.listView.clicked.connect(self.click_nodule_list)
         #self.init_openpath = '/root/ssd_data/LUNA/allset/'
-        self.init_openpath = '/root/ssd_data/demo/'
+        self.init_openpath = '/home/imsight/data/demo/'
         #self.init_openpath = '/root/ssd_data/LUNA/allset/'
         self.resolution = np.array([1,1,1])
         self.slice_index = 0
@@ -46,7 +46,7 @@ class Main_Window(QtWidgets.QMainWindow, Ui_xai_viewer):
         self.slice_height = 0
         self.detect_resume = './detector.ckpt'
         self.attribute_resume = './attribute.ckpt'
-        self.gpu = '3'
+        self.gpu = '0'
         self.detect_net, self.attribute_net, self.split_comber, self.get_pbb \
             = self.init_net()
         self.stride = 4
@@ -59,6 +59,7 @@ class Main_Window(QtWidgets.QMainWindow, Ui_xai_viewer):
         self.file_dialog.selectNameFilter("mhd files (*.mhd)")
         self.rule_data_dir = './data/'
         self.nodule_rule_prob_count(self.rule_data_dir)
+        self.open()
 
     def nodule_rule_prob_count(self, rule_data_dir):
         labels = []
@@ -479,7 +480,7 @@ class Main_Window(QtWidgets.QMainWindow, Ui_xai_viewer):
             return 0
 
         s = time.time()
-        self.gt_path = '/root/ssd_data/luna_segment_attribute/' + self.pt_num + '_label.npy'
+        self.gt_path = '/home/imsight/code/lung_nodule_integ_viewer/data/' + self.pt_num + '_label.npy'
         data, coord2, nzhw = UI_util.split_data(np.expand_dims(self.sliceim_re, axis=0),
                                                 self.stride, self.split_comber)
 

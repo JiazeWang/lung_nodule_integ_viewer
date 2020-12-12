@@ -44,7 +44,7 @@ def resample(imgs, spacing, new_spacing,order=2):
     else:
         raise ValueError('wrong shape')
 def worldToVoxelCoord(worldCoord, origin, spacing):
-     
+
     stretchedVoxelCoord = np.absolute(worldCoord - origin)
     voxelCoord = stretchedVoxelCoord / spacing
     return voxelCoord
@@ -62,10 +62,10 @@ def load_itk_image(filename):
 
     itkimage = sitk.ReadImage(filename)
     numpyImage = sitk.GetArrayFromImage(itkimage)
-     
+
     numpyOrigin = np.array(list(reversed(itkimage.GetOrigin())))
     numpySpacing = np.array(list(reversed(itkimage.GetSpacing())))
-     
+
     return numpyImage, numpyOrigin, numpySpacing, isflip
 
 def process_mask(mask):
@@ -79,8 +79,8 @@ def process_mask(mask):
         else:
             mask2 = mask1
         convex_mask[i_layer] = mask2
-    struct = generate_binary_structure(3,1)  
-    dilatedMask = binary_dilation(convex_mask,structure=struct,iterations=10) 
+    struct = generate_binary_structure(3,1)
+    dilatedMask = binary_dilation(convex_mask,structure=struct,iterations=10)
     return dilatedMask
 
 
@@ -380,6 +380,7 @@ def preprocess_luna():
         xml_paths = glob.glob(anno_dir + "/*.xml")
         print(file_no, ": ", xml_path)
         for xml_path in xml_paths:
+            print("xml_path:", xml_path)
             err = savenpy_luna_attribute(xml_path=xml_path, annos=annos, filelist=filelist, luna_data=luna_data,
                                savepath=savepath, candidate_annos=candidate_annos, abbrevs=abbrevs, readlist=readlist)
             if  (err != -1):
@@ -389,8 +390,7 @@ def preprocess_luna():
     print('end preprocessing luna', file_no, len(filelist),)
 
     # f= open(finished_flag,"w+")
-    
+
 if __name__=='__main__':
     prepare_luna()
     preprocess_luna()
-
