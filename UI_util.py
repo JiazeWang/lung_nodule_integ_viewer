@@ -8,7 +8,7 @@ import cv2
 
 from scipy.ndimage.interpolation import zoom
 from torch.autograd import Variable
-sys.path.append('../nodule_detector')
+sys.path.append('../lung_nodule_detector')
 from training.layers import nms
 
 def load_itk_image(filename):
@@ -46,6 +46,26 @@ def resample(imgs, spacing, new_spacing, progressBar, order=2):
         resize_factor = new_shape / imgs.shape
         imgs = zoom(imgs, resize_factor, mode = 'nearest',order=order)
         progressBar.setValue(40)
+        return imgs, true_spacing
+    elif len(imgs.shape)==4:
+        n = imgs.shape[-1]
+        newimg = []
+        for i in range(n):
+            slice = imgs[:,:,:,i]
+            newslice,true_spacing = resample(slice,spacing,new_spacing)
+            newimg.append(newslice)
+        newimg=np.transpose(np.array(newimg),[1,2,3,0])
+        return newimg,true_spacing
+    else:
+        raise ValueError('wrong shape')
+
+def resample_v1(imgs, spacing, new_spacing, order=2):
+    print (len(imgs.shape))
+    if len(imgs.shape)==3:
+        new_shape = np.round(imgs.shape * spacing / new_spacing)
+        true_spacing = spacing * imgs.shape / new_shape
+        resize_factor = new_shape / imgs.shape
+        imgs = zoom(imgs, resize_factor, mode = 'nearest',order=order)
         return imgs, true_spacing
     elif len(imgs.shape)==4:
         n = imgs.shape[-1]
@@ -117,6 +137,74 @@ def predict_nodule(net, data, coord, nzhw, lbb, n_per_run, split_comber, get_pbb
             output = net(inputdata, inputcoord)
             outputlist.append(output.data.cpu().numpy())
             progressBar.setValue(10 + (80/len(splitlist) * (i+1)))
+    output = np.concatenate(outputlist, 0)
+    output = split_comber.combine(output, nzhw=nzhw)
+
+    # fps 1.215909091, sens 0.933333333, thres 0.371853054
+    thresh = 0.371853054
+    pbb, mask = get_pbb(output, thresh, ismask=True)
+
+    pbb = pbb[pbb[:, 0].argsort()[::-1]]
+    pbb_cand_list = []
+    # check overlap under 3mm
+    for cand in pbb:
+        is_overlap = False
+        for appended in pbb_cand_list:
+            minimum_dist = 3
+            dist = math.sqrt(
+                math.pow(appended[1] - cand[1], 2) + math.pow(appended[2] - cand[2], 2) + math.pow(
+                    appended[3] - cand[3], 2))
+            if (dist < minimum_dist):
+                is_overlap = True
+                break;
+
+        if not is_overlap:
+            pbb_cand_list.append(cand)
+
+    pbb_cand_list = np.array(pbb_cand_list)
+    pbb_cand_list_nms = nms(pbb_cand_list, 0.3)
+
+    # print (name)
+    # print (lbb)
+    world_pbb = convert_prob(pbb_cand_list_nms)
+    # print (world_pbb)
+    print("label", len(lbb))
+    print("z_pos   y_pos   x_pos   size")
+    for i in range(len(lbb)):
+        for j in range(len(lbb[i])):
+            print(round(lbb[i][j], 2), end='\t')
+        print()
+    print("candidate", len(world_pbb))
+    print("prob    z_pos   y_pos   x_pos   size")
+    for i in range(len(world_pbb)):
+        for j in range(len(world_pbb[i])):
+            print(round(world_pbb[i][j], 2), end='\t')
+        print()
+    total_label += len(lbb)
+    total_candi += len(world_pbb)
+
+    return lbb, world_pbb
+
+
+def predict_nodule_v1(net, data, coord, nzhw, lbb, n_per_run, split_comber, get_pbb):
+
+    net.eval()
+
+    total_label = 0
+    total_candi = 0
+
+    splitlist = list(range(0, len(data) + 1, n_per_run))
+
+    if splitlist[-1] != len(data):
+        splitlist.append(len(data))
+    outputlist = []
+
+    for i in range(len(splitlist) - 1):
+        with torch.no_grad():
+            inputdata = Variable(data[splitlist[i]:splitlist[i + 1]]).cuda()
+            inputcoord = Variable(coord[splitlist[i]:splitlist[i + 1]]).cuda()
+            output = net(inputdata, inputcoord)
+            outputlist.append(output.data.cpu().numpy())
     output = np.concatenate(outputlist, 0)
     output = split_comber.combine(output, nzhw=nzhw)
 
