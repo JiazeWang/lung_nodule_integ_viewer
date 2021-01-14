@@ -96,7 +96,7 @@ class savefile():
         self.size_rule_count_name = ['small', 'medium', 'big']
 
         # load attribute
-        for idx in range(887):
+        for idx in range(1):
             # l = np.load(os.path.join(data_dir, '%s_attribute.npy' % idx))
 
             num = str(idx)
@@ -344,7 +344,7 @@ class savefile():
             return 0
 
         s = time.time()
-        self.gt_path = '/home/imsight/code/lung_nodule_integ_viewer/data/' + self.pt_num + '_label.npy'
+        self.gt_path = '/research/dept8/jzwang/code/lung_nodule_integ_viewer/data/' + self.pt_num + '_label.npy'
         data, coord2, nzhw = UI_util.split_data(np.expand_dims(self.sliceim_re, axis=0),
                                                 self.stride, self.split_comber)
 
