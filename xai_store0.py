@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import time
 import math
-from xai_viewer_ui import Ui_xai_viewer
+#from xai_viewer_ui import Ui_xai_viewer
 
 # sys.path.append('../')
 # sys.path.append('../nodule_detector')
@@ -413,16 +413,12 @@ class savefile():
 
         self.sliceim_re, _ = UI_util.resample_v1(sliceim, spacing, self.resolution, order=1)
         savedicom(outputdir="result/"+self.pt_num, input=self.sliceim_re,  pixel_dtypes="int16")
-
         self.slice_arr = np.zeros((np.shape(self.sliceim_re)[0], np.shape(self.sliceim_re)[1], np.shape(self.sliceim_re)[2], 3))
-
         self.slice_num = np.shape(self.sliceim_re)[0]
         self.slice_height = np.shape(self.sliceim_re)[1]
         self.slice_width = np.shape(self.sliceim_re)[2]
-
         for i in range(len(self.sliceim_re)):
             self.slice_arr[i] = cv2.cvtColor(self.sliceim_re[i], 8)
-
         print ("finish convert")
         self.slice_index = int(self.slice_num/2)
         img = np.array(self.slice_arr[self.slice_index], dtype=np.uint8)
